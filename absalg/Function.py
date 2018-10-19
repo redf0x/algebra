@@ -2,7 +2,7 @@
 Definition of a function
 """
 
-from Set import Set
+from . import Set
 
 class Function:
     """Definition of a finite function"""
@@ -13,9 +13,9 @@ class Function:
         This method can be overwritten by subclasses of Function, so that for
         example GroupHomomorphisms can be between Groups, rather than Sets.
         """
-        if not isinstance(domain, Set):
+        if not isinstance(domain, Set.Set):
             raise TypeError("Domain must be a Set")
-        if not isinstance(codomain, Set):
+        if not isinstance(codomain, Set.Set):
             raise TypeError("Codomain must be a Set")
         if not all(function(elem) in codomain for elem in domain):
             raise TypeError("Function returns some value outside of codomain")

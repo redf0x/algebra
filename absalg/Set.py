@@ -14,6 +14,7 @@ class Set(frozenset):
         """Cartesian product"""
         if not isinstance(other, Set):
             raise TypeError("One of the objects is not a set")
+
         return Set((x, y) for x in self for y in other)
 
     def pick(self):
@@ -23,4 +24,5 @@ class Set(frozenset):
             raise KeyError("This is an empty set")
 
         for item in self: break
+
         return item

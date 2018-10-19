@@ -1,6 +1,3 @@
-import Set
-from Set import *
-import Function
-from Function import *
-import Group
-from Group import *
+from . import Set
+from . import Function
+from . import Group

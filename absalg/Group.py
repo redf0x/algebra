@@ -2,8 +2,8 @@
 
 import itertools
 
-from Set import Set
-from Function import Function
+from . import Set
+from . import Function
 
 class GroupElem:
     """
@@ -16,8 +16,10 @@ class GroupElem:
     def __init__(self, elem, group):
         if not isinstance(group, Group):
             raise TypeError("group is not a Group")
+
         if not elem in group.Set:
             raise TypeError("elem is not an element of group")
+
         self.elem = elem
         self.group = group
 
@@ -32,6 +34,7 @@ class GroupElem:
 
         if not isinstance(other, GroupElem):
             raise TypeError("other is not a GroupElem")
+
         return self.elem == other.elem
 
     def __ne__(self, other):
@@ -45,7 +48,7 @@ class GroupElem:
         If other is a group element, returns self * other.
         If other = n is an int, and self is in an abelian group, returns self**n
         """
-        if self.group.is_abelian() and isinstance(other, (int, long)):
+        if self.group.is_abelian() and isinstance(other, (int, int)):
             return self ** other
 
         if not isinstance(other, GroupElem):
@@ -65,7 +68,7 @@ class GroupElem:
         If other is a group element, returns other * self.
         If other = n is an int, and self is in an abelian group, returns self**n
         """
-        if self.group.is_abelian() and isinstance(other, (int, long)):
+        if self.group.is_abelian() and isinstance(other, (int, int)):
             return self ** other
 
         if not isinstance(other, GroupElem):
@@ -78,15 +81,16 @@ class GroupElem:
         """Returns self + other for Abelian groups"""
         if self.group.is_abelian():
             return self * other
+
         raise TypeError("not an element of an abelian group")
         
-    def __pow__(self, n, modulo=None):
+    def __pow__(self, n, modulo = None):
         """
         Returns self**n
         
         modulo is included as an argument to comply with the API, and ignored
         """
-        if not isinstance(n, (int, long)):
+        if not isinstance(n, (int, int)):
             raise TypeError("n must be an int or a long")
 
         if n == 0:
@@ -102,12 +106,14 @@ class GroupElem:
         """Returns self ** -1 if self is in an abelian group"""
         if not self.group.is_abelian():
             raise TypeError("self must be in an abelian group")
+
         return self ** (-1)
 
     def __sub__(self, other):
         """Returns self * (other ** -1) if self is in an abelian group"""
         if not self.group.is_abelian():
             raise TypeError("self must be in an abelian group")
+
         return self * (other ** -1)
 
     def order(self):
@@ -121,26 +127,31 @@ class Group:
         """Create a group, checking group axioms"""
 
         # Test types
-        if not isinstance(G, Set): raise TypeError("G must be a set")
-        if not isinstance(bin_op, Function):
+        if not isinstance(G, Set.Set): raise TypeError("G must be a set")
+
+        if not isinstance(bin_op, Function.Function):
             raise TypeError("bin_op must be a function")
+
         if bin_op.codomain != G:
             raise TypeError("binary operation must have codomain equal to G")
+
         if bin_op.domain != G * G:
             raise TypeError("binary operation must have domain equal to G * G")
 
         # Test associativity
         if not all(bin_op((a, bin_op((b, c)))) == \
-                   bin_op((bin_op((a, b)), c)) \
-                   for a in G for b in G for c in G):
+                bin_op((bin_op((a, b)), c)) \
+                for a in G for b in G for c in G):
             raise ValueError("binary operation is not associative")
 
         # Find the identity
         found_id = False
+
         for e in G:
             if all(bin_op((e, a)) == a for a in G):
                 found_id = True
                 break
+
         if not found_id:
             raise ValueError("G doesn't have an identity")
 
@@ -155,7 +166,7 @@ class Group:
                            for a in G for b in G)
 
         self.Set = G
-        self.group_elems = Set(GroupElem(g, self) for g in G)
+        self.group_elems = Set.Set(GroupElem(g, self) for g in G)
         self.e = GroupElem(e, self)
         self.bin_op = bin_op
 
@@ -228,20 +239,20 @@ class Group:
     def is_normal_subgroup(self, other):
         """Checks if self is a normal subgroup of other"""
         return self <= other and \
-               all(Set(g * h for h in self) == Set(h * g for h in self) \
+               all(Set.Set(g * h for h in self) == Set.Set(h * g for h in self) \
                    for g in other)
 
     def __div__(self, other):
         """ Returns the quotient group self / other """
         if not other.is_normal_subgroup(self):
             raise ValueError("other must be a normal subgroup of self")
-        G = Set(Set(self.bin_op((g, h)) for h in other.Set) for g in self.Set)
+        G = Set.Set(Set.Set(self.bin_op((g, h)) for h in other.Set) for g in self.Set)
 
         def multiply_cosets(x):
             h = x[0].pick()
-            return Set(self.bin_op((h, g)) for g in x[1])
+            return Set.Set(self.bin_op((h, g)) for g in x[1])
 
-        return Group(G, Function(G * G, G, multiply_cosets))
+        return Group(G, Function.Function(G * G, G, multiply_cosets))
 
     def inverse(self, g):
         """Returns the inverse of elem"""
@@ -273,7 +284,7 @@ class Group:
         elems must be iterable
         """
 
-        elems = Set(g if isinstance(g, GroupElem) else GroupElem(g, self) \
+        elems = Set.Set(g if isinstance(g, GroupElem) else GroupElem(g, self) \
                     for g in elems)
 
         if not elems <= self.group_elems:
@@ -283,10 +294,10 @@ class Group:
 
         oldG = elems
         while True:
-            newG = oldG | Set(a * b for a in oldG for b in oldG)
+            newG = oldG | Set.Set(a * b for a in oldG for b in oldG)
             if oldG == newG: break
             else: oldG = newG
-        oldG = Set(g.elem for g in oldG)
+        oldG = Set.Set(g.elem for g in oldG)
 
         return Group(oldG, self.bin_op.new_domains(oldG * oldG, oldG))
 
@@ -297,9 +308,9 @@ class Group:
     def subgroups(self):
         """Returns the Set of self's subgroups"""
 
-        old_sgs = Set([self.generate([self.e])])
+        old_sgs = Set.Set([self.generate([self.e])])
         while True:
-            new_sgs = old_sgs | Set(self.generate(list(sg.group_elems) + [g]) \
+            new_sgs = old_sgs | Set.Set(self.generate(list(sg.group_elems) + [g]) \
                                      for sg in old_sgs for g in self \
                                      if g not in sg.group_elems)
             if new_sgs == old_sgs: break
@@ -380,7 +391,7 @@ class Group:
         return bool(self.find_isomorphism(other))
 
 
-class GroupHomomorphism(Function):
+class GroupHomomorphism(Function.Function):
     """
     The definition of a Group Homomorphism
     
@@ -422,19 +433,19 @@ class GroupHomomorphism(Function):
 
 def Zn(n):
     """Returns the cylic group of order n"""
-    G = Set(range(n))
-    bin_op = Function(G * G, G, lambda x: (x[0] + x[1]) % n)
+    G = Set.Set(range(n))
+    bin_op = Function.Function(G * G, G, lambda x: (x[0] + x[1]) % n)
     return Group(G, bin_op)
 
 def Sn(n):
     """Returns the symmetric group of order n! """
-    G = Set(g for g in itertools.permutations(range(n)))
-    bin_op = Function(G * G, G, lambda x: tuple(x[0][j] for j in x[1]))
+    G = Set.Set(g for g in itertools.permutations(range(n)))
+    bin_op = Function.Function(G * G, G, lambda x: tuple(x[0][j] for j in x[1]))
     return Group(G, bin_op)
 
 def Dn(n):
     """Returns the dihedral group of order 2n """
-    G = Set("%s%d" % (l, x) for l in "RS" for x in xrange(n))
+    G = Set.Set("%s%d" % (l, x) for l in "RS" for x in xrange(n))
     def multiply_symmetries(x):
         l1, l2 = x[0][0], x[1][0]
         x1, x2 = int(x[0][1:]), int(x[1][1:])
@@ -448,5 +459,5 @@ def Dn(n):
                 return "S%d" % ((x1 - x2) % n)
             else:
                 return "R%d" % ((x1 - x2) % n)
-    return Group(G, Function(G * G, G, multiply_symmetries))
+    return Group(G, Function.Function(G * G, G, multiply_symmetries))
 
